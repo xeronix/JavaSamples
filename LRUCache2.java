@@ -1,82 +1,114 @@
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Map;
 
 public class LRUCache2 {
-	private int size;
-	LRUCacheValue value;
-	LRUCacheKey key;
-	HashMap<LRUCacheKey, LRUCacheValue> cache;
-	LinkedList<LRUCacheKey> keyList;
-	
-	public LRUCache2(int size) {
-		this.size = size;
-		cache = new HashMap<LRUCacheKey, LRUCacheValue>(size);
-		keyList = new LinkedList<>();
-	}
-	
-	public void set(LRUCacheKey key, LRUCacheValue value) {
-		if (keyList.size() == size) {
-			// cache is full, remove the oldest entry i.e first element from linked list
-			LRUCacheKey removedKey = keyList.removeFirst();
-			cache.remove(removedKey);
-		}
-		
-		if (!cache.containsKey(key)) {
-			keyList.add(key);	
-		}
-		
-		cache.put(key, value);
-	}
-	
-	public LRUCacheValue get(LRUCacheKey key) {
-		return cache.get(key);
-	}
-	
-	public void setSize(int size) {
-		this.size = size;
-	}
+    private Map<Integer, Node> cacheMap = new HashMap<Integer, Node>();
+    private Node start = null;
+    private Node end = null;
+    private int capacity;
+    
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+    }
+    
+    public int get(int key) {
+        Node node = cacheMap.get(key);
+        
+        if (node != null) {
+            moveToFront(node);
+            return node.getValue();
+        } else {
+            return -1;
+        }
+    }
+    
+    public void set(int key, int value) {
+        if (cacheMap.containsKey(key)) {
+             Node node = cacheMap.get(key);
+             moveToFront(node);
+             node.setValue(value);
+             return;
+        }
+                
+        if (cacheMap.size() == capacity) {
+        	Node endNode = end;
+            cacheMap.remove(endNode.key);
+            remove(endNode);
+        }
+        
+        Node node = new Node(key, value);
+        add(node);
+        cacheMap.put(key, node);
+    }
+    
+    private void moveToFront(Node node) {
+        remove(node);
+        add(node);
+    }
+    
+    // add a new node to front of list
+    private void add(Node node) {
+        if (start == null) {
+            start = node;
+            end = node;
+        } else {
+            node.next = start;
+            start.prev = node;
+            start = node;
+        }
+    }
+    
+    // remove given node
+    private void remove(Node node) {
+        // empty list
+        if (start == null || node == null) {
+            return;
+        } else if (start == node) {
+            // node is at start
+            
+            if (start == end) {
+                // only 1 node
+                start = end = null;
+            } else {
+                start = start.next;
+                start.prev = null;
+            }
+        } else if (end == node) {
+            // node is at end
+            end = end.prev;
+            end.next = null;
+        } else {
+            // remove in the middle;
+            node.prev.next = node.next;
+            node.next.prev = node.prev;
+        }
+
+        node = null;
+    }
 }
 
-class LRUCacheKey {
-	private int key;
-	
-	public LRUCacheKey(int key) {
-		this.key = key;
-	}
-	
-	public int getKey() {
-		return key;
-	}
-	
-	@Override
-	public boolean equals(Object ob) {
-		if (!(ob instanceof LRUCacheKey)) {
-			return false;
-		}
-		
-		if (ob == this) {
-			return true;
-		}
-		
-		LRUCacheKey otherKey = (LRUCacheKey)ob;
-		
-		return otherKey.getKey() == this.key;
-	}
-	
-	@Override
-	public int hashCode() {
-		return this.key;
-	}
-}
-
-class LRUCacheValue {
-	private int value;
-	
-	public LRUCacheValue(int value) {
-		this.value = value;
-	}
-	
-	public int getValue() {
-		return value;
-	}
+class Node {
+    int key;
+    int value;
+    Node next;
+    Node prev;
+    
+    public Node(int key, int value) {
+        this.key = key;
+        this.value = value;
+        this.next = null;
+        this.prev = null;
+    }
+    
+    public int getKey() {
+        return key;
+    }
+    
+    public int getValue() {
+        return value;
+    }
+    
+    public void setValue(int value) {
+        this.value = value;
+    }
 }
